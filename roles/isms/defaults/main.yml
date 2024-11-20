@@ -1,0 +1,62 @@
+check_isms: false
+# U-49 불필요한 계정 제거
+isms_userdel:
+  - shutdown
+  - halt
+  - lp
+  - sync
+  - news
+  - uucp
+  - operator
+  - games
+  - gopher
+  - nfsnobody
+  - irc
+isms_chmod:
+# U-08 /etc/shadow
+  - name: '/etc/shadow'
+    mode: '0400'
+# U-10 /etc/xinetd.conf
+  - name: '/etc/xinetd.conf'
+    mode: '0600'
+# U-10 /etc/inetd.conf
+  - name: '/etc/inetd.conf'
+    mode: '0600'
+# U-65 /etc/inetd.conf
+  - name: '/etc/hosts.deny'
+    mode: '0644'
+# U-65 /etc/hosts.allow
+  - name: '/etc/hosts.allow'
+    mode: '0644'
+# U-01
+isms_sshd_config:
+  - regexp: "^#*PermitRootLogin .*"
+    line: "PermitRootLogin no"
+  - regexp: "^#*PasswordAuthentication .*"
+    line: "PasswordAuthentication no"
+  - regexp: "^#*ClientAliveInterval .*"
+    line: "ClientAliveInterval 600"
+  - regexp: "^#*ClientAliveCountMax .*"
+    line: "ClientAliveCountMax 1"
+  - regexp: "^#*MaxAuthTries .*"
+    line: "MaxAuthTries 5"
+# U-02 password MAX_DAYS,MIN_DAYS,WARN_AGE,MIN_LEN
+isms_login_defs:
+  - regexp: "^#*PASS_MAX_DAYS.*"
+    line: "PASS_MAX_DAYS 99999"
+  - regexp: "^#*PASS_MIN_DAYS.*"
+    line: "PASS_MIN_DAYS 1"
+  - regexp: "^#*PASS_WARN_AGE.*"
+    line: "PASS_WARN_AGE 7"
+  - regexp: "^#*PASS_MIN_LEN.*"
+    line: "PASS_MIN_LEN 11"
+# U-56 UMASK 설정 관리
+  - dest: "/etc/login.defs"
+    regexp: "^#*UMASK.*"
+    line: "UMASK          022"
+# U-65, U-13 remove at binary
+tcp_wrapper:
+  - src: hosts.allow.j2
+    dest: /etc/hosts.allow
+  - src: hosts.deny.j2
+    dest: /etc/hosts.deny

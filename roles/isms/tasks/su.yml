@@ -1,0 +1,10 @@
+---
+- name: U-45 check su
+  shell: "which su"
+  register: which_su
+
+- name: U-45 chown su
+  file:
+    name: "{{ which_su.stdout }}"
+    mode: "4750"
+    group: "{{ isms_su_group }}"

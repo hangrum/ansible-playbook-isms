@@ -1,0 +1,116 @@
+---
+- include_tasks: "{{ ansible_distribution }}_{{ ansible_distribution_major_version }}.yml"
+  args:
+    apply:
+      tags: fact
+  tags: always
+
+- name: install isms package 
+  package:
+   name: "{{ isms_pkg_list }}"
+   state: present
+  when: isms_pkg_list is defined
+  tags: pkg
+
+- import_tasks: "xinetd_d.yml"
+  tags: xinetd_d
+
+- import_tasks: "change_config_files.yml"
+  tags: change
+
+- import_tasks: "at.yml"
+  tags: at
+
+- import_tasks: "su.yml"
+  tags: su
+
+- import_tasks: "tcp_wrapper.yml"
+  tags: hosts_allow
+
+- name: U-49 userdel - default unused users
+  user:
+    name: "{{ item }}"
+    state: absent
+  with_items: "{{ isms_userdel }}"
+  tags: userdel
+
+- name: U-56 umask to 022
+  script: set-umask-to-all.sh
+  tags: umask
+
+- name: U-58 list no homedir
+  script: list_no_homedir.sh
+  tags: homedir
+
+- name: chmod isms files U-08,U-10,U-65,U-46
+  file:
+    name: "{{ item.name }}"
+    mode: "{{ item.mode }}"
+  with_items: "{{ isms_chmod }}"
+  ignore_errors: true
+  tags: chmod
+
+- name: U-54 Add Session timeout environment
+  copy:
+    src: timeout.sh
+    dest: /etc/profile.d/timeout.sh
+    owner: root
+    group: root
+    mode: '0644'
+  tags: timeout
+
+- name: U-68 set motd secure
+  script: motd-secure.sh
+  register: motd
+  tags: motd
+  
+- debug: var=motd.stdout_lines
+  tags: motd
+
+- name: U-53 which nologin
+  shell: which nologin
+  register: nologin
+  tags: nologin
+
+- debug: var=nologin.stdout
+  tags: nologin
+
+- name: U-22 chmod 750 /usr/bin/crontab
+  shell: "chmod 750 /usr/bin/crontab"
+  tags: crontab
+
+- name: U-22 remove /etc/cron.deny
+  file:
+    path: /etc/cron.deny
+    state: absent
+  tags: crontab
+
+- name: Check and Configure Nginx server_tokens
+  become: true
+  shell: ps aux | grep nginx | grep -v 'grep'
+  register: nginx_process
+  changed_when: false
+  ignore_errors: yes
+  tags: nginx
+
+- import_tasks: "nginx.yml"
+  when: nginx_process.stdout_lines | length > 0
+  tags: nginx
+
+- import_tasks: "chage.yml"
+  tags: chage
+
+- name: make directory for backup files
+  file:
+    path: /opt/isms_backup_files
+    state: directory
+    owner: root
+    group: root
+  become: true
+  tags: bak
+
+- name: move backup files
+  shell: "mv /etc/security/*.*.*~ /etc/pam.d/*.*.*~ /opt/isms_backup_files"
+  become: true
+  tags: bak
+  ignore_errors: true

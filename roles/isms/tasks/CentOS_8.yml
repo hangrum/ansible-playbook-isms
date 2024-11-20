@@ -1,0 +1,48 @@
+---
+- name: set {{ ansible_distribution }} {{ ansible_distribution_major_version }} variable
+  set_fact:
+    isms_su_group: wheel
+    isms_template_files_pam_d:
+      - temp: su.{{ ansible_distribution }}{{ ansible_distribution_major_version }}.j2
+        dest: /etc/pam.d/su
+    isms_pam_d:
+    # for teleport motd
+      - dest: "/etc/pam.d/sshd"
+        regexp: "motd.dynamic"
+        line: "session    optional     pam_motd.so  motd=/run/motd.dynamic"
+      - dest: "/etc/pam.d/sshd"
+        regexp: "noupdate$"
+        line: "session    optional     pam_motd.so noupdate"
+    isms_faillock:
+    # U-02
+      - regexp: "^#* *audit.*"
+        line: "audit"
+      - regexp: "^#* *silent.*"
+        line: "silent"
+      - regexp: "^#* *deny.*"
+        line: "deny = 3"
+      - regexp: "^#* *unlock_time.*"
+        line: "unlock_time = 120"
+      - regexp: "^#* *even_deny_root.*"
+        line: "even_deny_root"
+      - regexp: "^#* *root_unlock_time.*"
+        line: "root_unlock_time = 120"
+    isms_pwquality:
+    # U-02
+      - regexp: "^#* *minlen.*"
+        line: "minlen = 11"
+      - regexp: "^#* *minclass.*"
+        line: "minclass = 3"
+      - regexp: "^#* *ocredit.*"
+        line: "ocredit = -1"
+      - regexp: "^#* *ucredit.*"
+        line: "ucredit = -1"
+      - regexp: "^#* *lcredit.*"
+        line: "lcredit = -1"
+  tags: always
+
+
+- name: run authselect sssd
+  shell: "sudo authselect select sssd -f ; sudo authselect enable-feature with-faillock"
+  tags: authselect
+  tags: always

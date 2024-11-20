@@ -1,0 +1,47 @@
+---
+- name: set {{ ansible_distribution }} {{ ansible_distribution_major_version }} variable
+  set_fact:
+    isms_su_group: wheel
+    # U-45
+    isms_template_files_pam_d:
+      - temp: su.{{ ansible_distribution }}{{ ansible_distribution_major_version }}.j2
+        dest: /etc/pam.d/su
+    isms_pam_d:
+    # for teleport motd
+      - dest: "/etc/pam.d/sshd"
+        regexp: "motd.dynamic"
+        line: "session    optional     pam_motd.so  motd=/run/motd.dynamic"
+      - dest: "/etc/pam.d/sshd"
+        regexp: "noupdate$"
+        line: "session    optional     pam_motd.so noupdate"
+    isms_pwquality:
+    # U-02
+      - regexp: "^#* *minlen.*"
+        line: "minlen = 11"
+      - regexp: "^#* *minclass.*"
+        line: "minclass = 3"
+      - regexp: "^#* *ocredit.*"
+        line: "ocredit = -1"
+      - regexp: "^#* *ucredit.*"
+        line: "ucredit = -1"
+      - regexp: "^#* *lcredit.*"
+        line: "lcredit = -1"
+  tags: always
+- name: run authconfig 
+  shell: 'sudo authconfig --enablereqlower --enablerequpper --enablereqother --passminlen=11 --passminclass=3 --enablefaillock --faillockargs="deny=3 unlock_time=120" --update'
+  ignore_errors: true
+  register: authconfig
+  tags: authconfig
+  tags: always
+
+- name: reset {{ ansible_distribution }}{{ ansible_distribution_version }} variable
+  set_fact:
+    isms_template_files_pam_d:
+      - temp: su.{{ ansible_distribution }}{{ ansible_distribution_major_version }}.j2
+        dest: /etc/pam.d/su
+      - temp: password-auth.{{ ansible_distribution }}{{ ansible_distribution_major_version }}.j2
+        dest: /etc/pam.d/password-auth
+      - temp: system-auth.{{ ansible_distribution }}{{ ansible_distribution_major_version }}.j2
+        dest: /etc/pam.d/system-auth
+  when: authconfig.rc != '0'
+  tags: always

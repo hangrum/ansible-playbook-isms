@@ -1,0 +1,34 @@
+---
+ - name: Remove Apache2 package
+   apt:
+     name: apache2
+     state: absent
+   when: ansible_distribution == "Ubuntu"
+   tags: apache2
+
+ - name: Remove httpd package
+   yum:
+     name: httpd
+     state: absent
+   when: ansible_distribution != "Ubuntu"
+   tags: apache2
+
+ - name: Remove /etc/apache directory
+   file:
+     path: /etc/apache
+     state: absent
+   when: ansible_distribution == "Ubuntu"
+   tags: apache2
+
+ - name: Remove /etc/apache2 directory
+   file:
+     path: /etc/apache2
+     state: absent
+   when: ansible_distribution == "Ubuntu"
+   tags: apache2
+
+ - name: Remove /etc/httpd directory
+   file:
+     path: /etc/httpd
+     state: absent
+   tags: apache2

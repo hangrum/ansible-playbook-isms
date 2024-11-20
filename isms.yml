@@ -1,0 +1,8 @@
+---
+- hosts: "{{ target }}"
+  become: true
+  roles:
+  - isms
+  post_tasks: 
+  - name: remove /tmp/.ansible-*
+    shell: "rm -rf /tmp/ansible*;rm -rf /tmp/.ansible*"

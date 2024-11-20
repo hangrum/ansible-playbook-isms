@@ -1,0 +1,80 @@
+---
+- name: U-03 template config file
+  template:
+    src: "{{ item.temp }}"
+    dest: "{{ item.dest }}"
+  with_items: "{{ isms_template_files_pam_d }}"
+  when: isms_template_files_pam_d is defined
+  tags: template_pam_d
+
+- name: U-01 Change /etc/ssh/sshd_config config files
+  lineinfile:
+    dest: "/etc/ssh/sshd_config"
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+    backup: yes
+    backrefs: yes
+  with_items: "{{ isms_sshd_config }}"
+  when: isms_sshd_config is defined and not (ansible_hostname.startswith('cosmos') or ansible_hostname.startswith('proxmox') or ansible_hostname.startswith('ultron'))
+  register: sshd_config
+  tags: sshd_config
+
+- name: restart sshd
+  service:
+    name: sshd
+    state: restarted
+  when: sshd_config.changed|bool
+  tags: sshd_config
+
+- name: U-02,U-46 Change /etc/login.defs config files
+  lineinfile:
+    dest: "/etc/login.defs"
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+    backup: yes
+    backrefs: yes
+  with_items: "{{ isms_login_defs }}"
+  when: isms_login_defs is defined
+  tags: login_defs
+
+- name: remove PASS_MIN_LEN in trusty, xenial
+  lineinfile:
+    dest: "/etc/login.defs"
+    regexp: "^PASS_MIN_LEN.*"
+    state: absent
+  when: ansible_distribution_release == 'xenial' or ansible_distribution_release == 'trusty'
+  tags: login_defs
+
+- name: U-02 Change /etc/security/pwquality.conf config files
+  lineinfile:
+    dest: "/etc/security/pwquality.conf"
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+    backup: yes
+    backrefs: yes
+  with_items: "{{ isms_pwquality }}"
+  when: isms_pwquality is defined
+  tags: pwquality
+
+- name: U-03 faillock config /etc/security/faillock.conf config files
+  lineinfile:
+    dest: "/etc/security/faillock.conf"
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+    backup: yes
+    backrefs: yes
+  with_items: "{{ isms_faillock }}"
+  when: isms_faillock is defined
+  tags: faillock
+
+
+- name: U-03 Change /etc/security/pam.d config files
+  lineinfile:
+    dest: "{{ item.dest }}"
+    regexp: "{{ item.regexp }}"
+    line: "{{ item.line }}"
+    backup: yes
+    backrefs: yes
+  with_items: "{{ isms_pam_d }}"
+  when: isms_pam_d is defined
+  tags: pam_d

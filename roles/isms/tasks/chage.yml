@@ -1,0 +1,10 @@
+- name: Get users with /bin/bash shell
+  shell: cat /etc/passwd | grep '/bin/bash' | cut -d ':' -f 1
+  register: bash_users
+  tags: chage
+
+- name: Set password expiration days using chage command
+  become: true
+  shell: chage -m 1 "{{ item }}"
+  loop: "{{ bash_users.stdout_lines }}"
+  tags: chage

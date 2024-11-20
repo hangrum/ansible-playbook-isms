@@ -1,0 +1,57 @@
+---
+- name: U-65 check at binary
+  shell: "which at"
+  register: which_at
+  failed_when: false
+  tags: at
+- debug: var=which_at
+  tags: at
+
+- name: U-65 at binary change SUID
+  file:
+    name: "{{ which_at.stdout }}"
+    mode: "0750"
+  when: which_at.stdout != ''
+  tags: at
+
+- name: U-13 check unix_chkpwd
+  shell: "which unix_chkpwd"
+  register: which_chkpwd
+  failed_when: false
+  tags: at
+- debug: var=which_chkpwd
+  tags: at
+
+- name: U-13 chmod unix_chkpwd - Ubuntu
+  file:
+    name: "{{ which_chkpwd.stdout }}"
+    mode: "0750"
+  when: which_chkpwd.stdout != ''
+  tags: at
+
+- name: U-13 check newgrp
+  shell: "which newgrp"
+  register: which_newgrp
+  failed_when: false
+  tags: at
+- debug: var=which_newgrp
+  tags: at
+
+- name: U-13 chmod newgrp
+  file:
+    name: "{{ which_newgrp.stdout }}"
+    mode: "0750"
+  when: which_newgrp.stdout != ''
+  tags: at
+  
+- name: U-65 remove /etc/at.deny
+  file:
+    path: /etc/at.deny
+    state: absent
+  tags: at
+
+- name: U-13 make md5sum at file
+  shell: "md5sum {{ which_at.stdout }} > /var/tmp/at.md5sum"
+  failed_when: false
+  when: which_at.stdout != ''
+  tags: at

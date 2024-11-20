@@ -1,0 +1,55 @@
+---
+- name: U-35 Find files with autoindex on
+  shell: "grep -rl 'autoindex on' /etc/nginx/ | xargs -r echo"
+  register: nginx_files
+  changed_when: false
+  tags: nginx
+
+- name: Debug nginx_files variable
+  debug:
+    var: nginx_files
+  tags: nginx
+
+- name: U-35 Remove autoindex on line from configuration files
+  lineinfile:
+    path: "{{ item }}"
+    state: absent
+    regexp: "autoindex on;"
+  with_items: "{{ nginx_files.stdout_lines }}"
+  register: lineinfile_result
+  tags: nginx
+
+- name: U-35 Reload Nginx
+  service:
+    name: nginx
+    state: reloaded
+  when: lineinfile_result.results | map(attribute='changed') | list | count > 0
+  tags: nginx
+
+- name: Check if /etc/nginx/nginx.conf exists
+  stat:
+    path: /etc/nginx/nginx.conf
+  register: nginx_conf_check
+  tags: nginx
+
+- name: U-71 Check if server_tokens off
+  shell: "grep -r 'server_tokens off' /etc/nginx/ | grep -v '#'"
+  register: server_tokens_check
+  changed_when: false
+  ignore_errors: yes
+  tags: nginx
+
+- name: U-71 Add server_tokens directive if not present
+  lineinfile:
+    path: /etc/nginx/nginx.conf
+    line: "server_tokens off;"
+    insertafter: "^http {"
+  when: nginx_conf_check.stat.exists == true and server_tokens_check.rc != 0
+  tags: nginx
+
+- name: U-71 Reload Nginx
+  service:
+    name: nginx
+    state: reloaded
+  when: nginx_conf_check.stat.exists == true and server_tokens_check.rc != 0 and server_tokens_check.stdout == ""
+  tags: nginx

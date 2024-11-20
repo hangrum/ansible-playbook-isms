@@ -1,0 +1,23 @@
+- name: U-18 check /etc/xinetd.d
+  stat:
+    path: /etc/xinetd.d
+  register: xinetd_d
+  tags: xinetd_d
+
+- debug: var=xinetd_d.stat.exists
+  tags: xinetd_d
+
+- name: chmod 600 all files in /etc/xinetd.d
+  shell: "ls /etc/xinetd.d"
+  when: xinetd_d is defined and xinetd_d.stat.exists|bool
+  register: xinetd_d_files
+  tags: xinetd_d
+
+- debug: var=xinetd_d_files
+  tags: xinetd_d
+
+
+- name: chmod 600 all files in /etc/xinetd.d
+  shell: "chmod 600 /etc/xinetd.d/*"
+  when: xinetd_d is defined and xinetd_d.stat.exists|bool and xinetd_d_files is defined and xinetd_d_files.stdout != ""
+  tags: xinetd_d
