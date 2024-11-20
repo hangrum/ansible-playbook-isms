@@ -35,7 +35,7 @@ ansible-playbook isms.yml -e"target=hostname"
 ### 2. 특정 배포판에 맞춘 설정
 
 - 해당 배포판에 맞는 tasks 파일과 templates 파일이 자동으로 적용됩니다.
-- 예: Ubuntu 20.04를 사용하는 경우 tasks/Ubuntu_20.yml와 관련 템플릿이 적용됩니다.
+  - 예: Ubuntu 20.04를 사용하는 경우 tasks/Ubuntu_20.yml와 관련 템플릿이 적용됩니다.
 
 ## 지원 배포판
 
